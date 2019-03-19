@@ -3,9 +3,10 @@
     <HtPullRefresh 
       ref="pullRefresh" 
       :listData="listData" 
-      :pulldown="true" 
-      :pullup="true"
+      :pulldown="isPulldownRefresh" 
+      :pullup="isPullup"
       :loadFinish="isLoadFinish"
+      @pullDownDone="pullRefresh" 
       @pullUpDone="getMoreData" 
       :pullDownLoading.sync="isPullDownLoading"
       :pullUpLoading.sync="isPullUpLoading">
@@ -28,9 +29,11 @@ export default {
   data() {
     return {
       listData: [],
-      isPullDownLoading: false,
-      isPullUpLoading: false,
-      isLoadFinish: false,
+      isPulldownRefresh:true, //开启下拉刷新
+      isPullup:true, //开启上拉加载更多
+      isPullDownLoading: false, //正在下拉刷新加载中
+      isPullUpLoading: false, //上拉加载中
+      isLoadFinish: false, //是否上拉加载完全部数据
       page:1
     }
   },
@@ -47,11 +50,19 @@ export default {
         this.listData.push(...newData)
         this.isPullUpLoading = false
       },2000)
+    },
+    pullRefresh() {
+      setTimeout(() => {
+        this.page == 1
+        this.isLoadFinish = false
+        this.listData = Array.from({length:30},(v,k) => k)
+        this.isPullDownLoading = false
+      }, 2000);
     }
   },
   mounted() {
     setTimeout(() => {
-      this.listData = Array.from({length:30},(v,k) => k)
+      this.listData = Array.from({length:9},(v,k) => k)
       console.log(this.$refs.pullRefresh)
     },200)
   }

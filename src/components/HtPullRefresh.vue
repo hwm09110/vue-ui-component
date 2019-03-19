@@ -1,7 +1,7 @@
 <template>
   <div ref="scroll_container" class="pull-refresh-wrapper">
     <div class="pull-refresh-inner">
-      <div class="pull-refresh-head" :class="{pullRefreshLoading:pullDownLoading}">
+      <div class="pull-refresh-head" :class="{pullRefreshLoading:pullDownLoading}" v-show="pulldown">
         <div class="pull-refresh-text" v-show="!pullDownLoading">{{pullDownMsg}}</div>
         <div class="pull-refresh-loading" v-show="pullDownLoading">
           <span class="loading-icon-box">
@@ -11,7 +11,7 @@
         </div>
       </div>
       <slot></slot>
-      <div class="pullup-load" :class="{pullUpLoading:pullUpLoading}" v-show="!loadFinish">
+      <div class="pullup-load" :class="{pullUpLoading:pullUpLoading}" v-show="!loadFinish && pullup">
         <div class="pullup-load-text" v-show="!pullUpLoading">{{pullUpMsg}}</div>
         <div class="pullup-loading" v-show="pullUpLoading">
           <span class="loading-icon-box">
@@ -39,14 +39,14 @@
           default: 1
       },
       /**
-       * 是否派发顶部下拉的事件，用于下拉刷新
+       * 是否开启下拉刷新
        */
       pulldown: {
           type: Boolean,
           default: false
       },
       /**
-       * 是否派发低部上拉的事件，用于上拉加载
+       * 是否开启上拉加载
        */
       pullup: {
           type: Boolean,
@@ -102,6 +102,7 @@
         console.log(this.scrollObj)
         setTimeout(() => {
           this.scrollObj.refresh()
+          console.log(this.scrollObj.maxScrollY)
         },this.refreshDelay)
       }
     },
@@ -116,7 +117,6 @@
           pullUpLoad: this.pullUpLoad
         }
         this.scrollObj = new BScroll(this.$refs.scroll_container, options)
-        window.scrollObj = this.scrollObj
 
         //滚动事件触发
         this.scrollObj.on('scroll',(pos) => {
@@ -143,30 +143,24 @@
 
         //鼠标/手指离开
         this.scrollObj.on('touchEnd',(pos) => {
-          console.log(pos)
           let posY = pos.y
           //开启下拉刷新
-          if(this.pulldown){
+          if(this.pulldown && !this.pullDownLoading){
             if(posY > 60){
               this.$emit('update:pullDownLoading',true)
               this.pullDownMsg = "下拉刷新"
-              setTimeout(() => {
-                this.$emit('update:pullDownLoading',false)
-              },6000)
               //下拉到达触发刷新事件,可以请求后台数据
               this.$emit('pullDownDone')
             }
           }
 
           //上拉加载
-          if(this.pullup && !this.loadFinish){
+          if(this.pullup && !this.loadFinish && !this.pullUpLoading){
             let maxScrollY = this.scrollObj.maxScrollY
-            console.log(maxScrollY)
             if(posY - maxScrollY <= -50){
               this.$emit('update:pullUpLoading',true)
               this.pullUpMsg = "上拉加载更多"
               let scrollToVal = maxScrollY-50
-              console.log('scrollToVal',scrollToVal)
               setTimeout(() => {
                 this.scrollObj.refresh()
               },80)
@@ -178,16 +172,6 @@
             }
           }
         })
-
-        //监听上拉加载事件
-        // this.scrollObj.on('pullingUp',() => {
-        //   console.log('触发上拉加载事件了，可以向后台请求数据了')
-        //   this.pullUpMsg = ""
-        //   setTimeout(() => {
-        //     this.scrollObj.finishPullUp()
-        //   },3000)
-        //   this.$emit('onPullingUp')
-        // })
       }
     },
     mounted() {
@@ -229,6 +213,7 @@
 
   //上拉加载提示
   .pullup-load{
+    // display: none;
     position: absolute;
     left: 0;
     bottom: -50px;
