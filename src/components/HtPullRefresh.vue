@@ -1,9 +1,9 @@
 <template>
   <div ref="scroll_container" class="pull-refresh-wrapper">
     <div class="pull-refresh-inner">
-      <div class="pull-refresh-head" :class="{pullRefreshLoading:pullLoading}">
-        <div class="pull-refresh-text" v-show="!pullLoading">{{pullMsg}}</div>
-        <div class="pull-refresh-loading" v-show="pullLoading">
+      <div class="pull-refresh-head" :class="{pullRefreshLoading:pullDownLoading}">
+        <div class="pull-refresh-text" v-show="!pullDownLoading">{{pullDownMsg}}</div>
+        <div class="pull-refresh-loading" v-show="pullDownLoading">
           <span class="loading-icon-box">
             <span class="loading-icon"></span>
           </span>
@@ -11,13 +11,22 @@
         </div>
       </div>
       <slot></slot>
+      <div class="pullup-load" :class="{pullUpLoading:pullUpLoading}" v-show="!loadFinish">
+        <div class="pullup-load-text" v-show="!pullUpLoading">{{pullUpMsg}}</div>
+        <div class="pullup-loading" v-show="pullUpLoading">
+          <span class="loading-icon-box">
+            <span class="loading-icon"></span>
+          </span>
+          <span class="loading-text">{{pullLoadingText}}</span>
+        </div>
+      </div>
+      <div class="load-finish" v-show="loadFinish">{{loadFinishText}}</div>
     </div>
   </div>
 </template>
 
 <script>
   import BScroll from 'better-scroll'
-import { setTimeout } from 'timers';
   export default {
     props: {
       /**
@@ -37,6 +46,13 @@ import { setTimeout } from 'timers';
           default: false
       },
       /**
+       * 是否派发低部上拉的事件，用于上拉加载
+       */
+      pullup: {
+          type: Boolean,
+          default: false
+      },
+      /**
       * 列表的数据
       */
       listData: {
@@ -51,18 +67,33 @@ import { setTimeout } from 'timers';
         default: 20
       },
       /**
-       * 处于loading状态
+       * 处于下拉刷新loading状态
        */
-      pullLoading: {
+      pullDownLoading: {
+        type: Boolean,
+        default: false
+      },
+      /**
+       * 处于上拉加载loading状态
+       */
+      pullUpLoading: {
+        type: Boolean,
+        default: false
+      },
+      /**
+       * 上拉加载完所有数据
+       */
+      loadFinish: {
         type: Boolean,
         default: false
       }
     },
     data() {
       return {
-        pullMsg: "下拉刷新",
-        pullRefreshLoading: false,
-        pullLoadingText: "加载中..."
+        pullDownMsg: "下拉刷新",
+        pullLoadingText: "加载中...",
+        pullUpMsg: "上拉加载更多",
+        loadFinishText: "已加载完全部数据了！"
       }
     },
     watch: {
@@ -81,19 +112,31 @@ import { setTimeout } from 'timers';
         }
         let options = {
           probeType: this.probeType,
-          click: true //better-scroll 默认会阻止浏览器的原生 click 事件。当设置为 true，better-scroll 会派发一个 click 事件，我们会给派发的 event 参数加一个私有属性 _constructed，值为 true。
+          click: true, //better-scroll 默认会阻止浏览器的原生 click 事件。当设置为 true，better-scroll 会派发一个 click 事件，我们会给派发的 event 参数加一个私有属性 _constructed，值为 true。
+          pullUpLoad: this.pullUpLoad
         }
         this.scrollObj = new BScroll(this.$refs.scroll_container, options)
+        window.scrollObj = this.scrollObj
 
         //滚动事件触发
         this.scrollObj.on('scroll',(pos) => {
+          let posY = pos.y
+          //下拉刷新
           if(this.pulldown){
-            //下拉刷新
-            if(pos.y > 60){
-              this.pullMsg = "松开即可刷新了"
-              this.pullRefreshLoading = true
+            if(posY > 60){
+              this.pullDownMsg = "松开即可刷新了"
             }else{
-              this.pullMsg = "下拉刷新"
+              this.pullDownMsg = "下拉刷新"
+            }
+          }
+
+          //上拉加载
+          if(this.pullup && !this.loadFinish){
+            let maxScrollY = this.scrollObj.maxScrollY
+            if(posY - maxScrollY < -50){
+              this.pullUpMsg = "松开即可加载更多"
+            }else{
+              this.pullUpMsg = "上拉加载更多"
             }
           }
         })
@@ -101,20 +144,50 @@ import { setTimeout } from 'timers';
         //鼠标/手指离开
         this.scrollObj.on('touchEnd',(pos) => {
           console.log(pos)
+          let posY = pos.y
+          //开启下拉刷新
           if(this.pulldown){
-            if(pos.y > 60){
-              // this.pullLoading = true
-              this.$emit('update:pullLoading',true)
-              this.pullMsg = "下拉刷新"
+            if(posY > 60){
+              this.$emit('update:pullDownLoading',true)
+              this.pullDownMsg = "下拉刷新"
               setTimeout(() => {
-                // this.pullLoading = false
-                this.$emit('update:pullLoading',false)
+                this.$emit('update:pullDownLoading',false)
               },6000)
-              //下拉到达触发刷新事件
+              //下拉到达触发刷新事件,可以请求后台数据
               this.$emit('pullDownDone')
             }
           }
+
+          //上拉加载
+          if(this.pullup && !this.loadFinish){
+            let maxScrollY = this.scrollObj.maxScrollY
+            console.log(maxScrollY)
+            if(posY - maxScrollY <= -50){
+              this.$emit('update:pullUpLoading',true)
+              this.pullUpMsg = "上拉加载更多"
+              let scrollToVal = maxScrollY-50
+              console.log('scrollToVal',scrollToVal)
+              setTimeout(() => {
+                this.scrollObj.refresh()
+              },80)
+              setTimeout(() => {
+                this.scrollObj.scrollTo(0,scrollToVal)
+              },150)
+              //上拉到达触发加载事件,可以请求后台数据
+              this.$emit('pullUpDone')
+            }
+          }
         })
+
+        //监听上拉加载事件
+        // this.scrollObj.on('pullingUp',() => {
+        //   console.log('触发上拉加载事件了，可以向后台请求数据了')
+        //   this.pullUpMsg = ""
+        //   setTimeout(() => {
+        //     this.scrollObj.finishPullUp()
+        //   },3000)
+        //   this.$emit('onPullingUp')
+        // })
       }
     },
     mounted() {
@@ -127,7 +200,7 @@ import { setTimeout } from 'timers';
 </script>
 
 
-<style lang="scss">
+<style lang="scss" scope>
   .pull-refresh-wrapper {
     overflow-y: auto;
     transition: 330ms;
@@ -136,6 +209,8 @@ import { setTimeout } from 'timers';
     position: relative;
     height: 100%;
   }
+
+  //下拉刷新
   .pull-refresh-head {
     position: absolute;
     left: 0;
@@ -150,43 +225,53 @@ import { setTimeout } from 'timers';
     .pull-refresh-text{
       text-align: center;
     }
-    .pull-refresh-loading{
-      .loading-icon{
-        display: inline-block;
-        vertical-align: middle;
-        // animation:loadRotate 1s linear infinite;
-      }
+  }
+
+  //上拉加载提示
+  .pullup-load{
+    position: absolute;
+    left: 0;
+    bottom: -50px;
+    width: 100%;
+    height: 50px;
+    overflow: hidden;
+    text-align: center;
+    font-size: 14px;
+    color: #969799;
+    line-height: 50px;
+    .pullup-load-text{
+      text-align: center;
     }
   }
-  .pullRefreshLoading{
+
+  .pullRefreshLoading,
+  .pullUpLoading{
     position: initial;
   }
 
-
-  @-webkit-keyframes loadRotate{
-    from{
-      -webkit-transform: rotate(0deg);
-    }
-    to{
-      -webkit-transform: rotate(360deg);
-    }
-  }
-  @keyframes loadRotate{
-    from{
-      transform: rotate(0deg);
-    }
-    to{
-      transform: rotate(360deg);
-    }
+  //全部加载完提示
+  .load-finish{
+    width: 100%;
+    height: 50px;
+    overflow: hidden;
+    text-align: center;
+    font-size: 14px;
+    color: #969799;
+    line-height: 50px;
   }
 
   // loading icon
+  .loading-icon-box{
+    .loading-icon{
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
   .loading-icon,
   .loading-icon:before,
   .loading-icon:after {
     background: #30a5ff;
-    -webkit-animation: load1 1s infinite ease-in-out;
-    animation: load1 1s infinite ease-in-out;
+    animation: loadAnimation 1s infinite ease-in-out;
     width: 0.3em;
     height: 0.5em;
   }
@@ -197,10 +282,7 @@ import { setTimeout } from 'timers';
     font-size: 11px;
     line-height: normal;
     margin: 0 15px;
-    -webkit-transform: translateZ(0);
-    -ms-transform: translateZ(0);
     transform: translateZ(0);
-    -webkit-animation-delay: -0.16s;
     animation-delay: -0.16s;
   }
   .loading-icon:before,
@@ -211,25 +293,12 @@ import { setTimeout } from 'timers';
   }
   .loading-icon:before {
     left: -0.6em;
-    -webkit-animation-delay: -0.32s;
     animation-delay: -0.32s;
   }
   .loading-icon:after {
     left: 0.6em;
   }
-  @-webkit-keyframes load1 {
-    0%,
-    80%,
-    100% {
-      box-shadow: 0 0;
-      height: 0.8em;
-    }
-    40% {
-      box-shadow: 0 -0.8em;
-      height: 1.2em;
-    }
-  }
-  @keyframes load1 {
+  @keyframes loadAnimation {
     0%,
     80%,
     100% {
