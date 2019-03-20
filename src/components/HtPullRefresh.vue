@@ -11,7 +11,7 @@
         </div>
       </div>
       <slot></slot>
-      <div class="pullup-load" :class="{pullUpLoading:pullUpLoading}" v-show="!loadFinish && pullup">
+      <div class="pullup-load" :class="{pullUpLoading:pullUpLoading}" v-show="!loadFinish && pullup && showPullUp">
         <div class="pullup-load-text" v-show="!pullUpLoading">{{pullUpMsg}}</div>
         <div class="pullup-loading" v-show="pullUpLoading">
           <span class="loading-icon-box">
@@ -93,7 +93,8 @@
         pullDownMsg: "下拉刷新",
         pullLoadingText: "加载中...",
         pullUpMsg: "上拉加载更多",
-        loadFinishText: "已加载完全部数据了！"
+        loadFinishText: "已加载完全部数据了！",
+        showPullUp: true
       }
     },
     watch: {
@@ -103,6 +104,9 @@
         setTimeout(() => {
           this.scrollObj.refresh()
           console.log(this.scrollObj.maxScrollY)
+          if(this.scrollObj.maxScrollY == 0){
+            this.showPullUp = false
+          }
         },this.refreshDelay)
       }
     },

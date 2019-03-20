@@ -20,7 +20,6 @@
 <script>
 // @ is an alias to /src
 import HtPullRefresh from '@c/HtPullRefresh'
-import { setTimeout } from 'timers';
 export default {
   name: "home",
   components: {
@@ -62,7 +61,7 @@ export default {
   },
   mounted() {
     setTimeout(() => {
-      this.listData = Array.from({length:9},(v,k) => k)
+      this.listData = Array.from({length:13},(v,k) => k)
       console.log(this.$refs.pullRefresh)
     },200)
   }
