@@ -100,7 +100,7 @@
     watch: {
        // 监听数据的变化，延时refreshDelay时间后调用refresh方法重新计算，保证滚动效果正常
       listData() {
-        console.log(this.scrollObj)
+        // console.log(this.scrollObj)
         setTimeout(() => {
           this.scrollObj.refresh()
           console.log(this.scrollObj.maxScrollY)

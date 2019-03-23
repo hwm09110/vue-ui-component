@@ -11,7 +11,7 @@
       :pullDownLoading.sync="isPullDownLoading"
       :pullUpLoading.sync="isPullUpLoading">
       <ul class="content">
-        <li class="item" v-for="(item,index) of listData" :key="index">item{{index + 1}}</li>
+        <li class="item" v-for="(item,index) of listData" :key="index" @click="handleItemClick(index)">item{{index + 1}}</li>
       </ul>
     </HtPullRefresh>
   </div>
@@ -54,15 +54,17 @@ export default {
       setTimeout(() => {
         this.page == 1
         this.isLoadFinish = false
-        this.listData = Array.from({length:30},(v,k) => k)
+        this.listData = Array.from({length:15},(v,k) => k)
         this.isPullDownLoading = false
       }, 2000);
+    },
+    handleItemClick(index) {
+      this.$toast(`item${index}`)
     }
   },
   mounted() {
     setTimeout(() => {
-      this.listData = Array.from({length:13},(v,k) => k)
-      console.log(this.$refs.pullRefresh)
+      this.listData = Array.from({length:15},(v,k) => k)
     },200)
   }
 };
