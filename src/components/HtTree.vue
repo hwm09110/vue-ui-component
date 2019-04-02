@@ -13,34 +13,41 @@
                    {
                        title: "root node",
                        expand: true,
+                       checked: false,
                        children: [
                            {
                                title: "child-1",
                                expand: false,
+                               checked: false,
                                children: []
                            },
                            {
                                title: "child-2",
                                expand: false,
+                               checked: false,
                                children: []
                            },
                            {
                                title: "child-3",
                                expand: false,
+                               checked: false,
                                children: [
                                     {
                                         title: "child-3-1",
                                         expand: false,
+                                        checked: false,
                                         children: []
                                     },
                                     {
                                         title: "child-3-2",
                                         expand: false,
+                                        checked: false,
                                         children: []
                                     },
                                     {
                                         title: "child-3-3",
                                         expand: false,
+                                        checked: false,
                                         children: []
                                     }
                                ]
@@ -48,6 +55,7 @@
                            {
                                title: "child-4",
                                expand: false,
+                               checked: false,
                                children: []
                            }
                        ]
@@ -72,6 +80,9 @@
            },
            handleDelNode(nodeData, index, parentData) {
                parentData.splice(index,1)
+           },
+           handleChecked(e) {
+               console.log(e)
            }
        },
        render(h) {
@@ -81,7 +92,7 @@
                     return (
                         <li>
                             <div class="node-content">
-                                <div class="title">{ current.title }</div>                            
+                                <div class="title"><input type="checkbox" checked={ current.checked } onChange={ this.handleChecked } /> { current.title }</div>                            
                                 <div class="operate">
                                     <span class="add-btn" onClick={ ()=>{ this.handleAddNode(current, index, sourceData) } }>+</span>
                                     <span class="del-btn" onClick={ ()=>{ this.handleDelNode(current, index, sourceData) } }>-</span>
