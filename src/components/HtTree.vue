@@ -11,40 +11,54 @@
            return {
                treeData:[
                    {
+                       id:1,
+                       pid:null,
                        title: "root node",
                        expand: true,
                        checked: false,
                        children: [
                            {
+                               id:2,
+                               pid:1,
                                title: "child-1",
                                expand: false,
                                checked: false,
                                children: []
                            },
                            {
+                               id:3,
+                               pid:1,
                                title: "child-2",
                                expand: false,
                                checked: false,
                                children: []
                            },
                            {
+                               id:4,
+                               pdi:1,
                                title: "child-3",
                                expand: false,
                                checked: false,
                                children: [
                                     {
+                                        id:5,
+                                        pid:4,
                                         title: "child-3-1",
                                         expand: false,
                                         checked: false,
                                         children: []
                                     },
                                     {
+                                        id:6,
+                                        pid:4,
                                         title: "child-3-2",
                                         expand: false,
                                         checked: false,
                                         children: []
                                     },
                                     {
+                                        id:7,
+                                        pid:4,
                                         title: "child-3-3",
                                         expand: false,
                                         checked: false,
@@ -53,10 +67,12 @@
                                ]
                            },
                            {
-                               title: "child-4",
-                               expand: false,
-                               checked: false,
-                               children: []
+                                id:8,
+                                pid:1,
+                                title: "child-4",
+                                expand: false,
+                                checked: true,
+                                children: []
                            }
                        ]
                    }
@@ -64,12 +80,12 @@
            }
        },
        methods: {
-           handleAddNode(nodeData, index, parentData) {
+           handleAddNode(nodeData, index, siblingNode) {
                 let childData = nodeData.children,
                     childLength = childData.length,
                     title = nodeData.title;
                 
-                let newTitle = (parentData.length == 1? "child": title) + '-' + (childLength + 1);
+                let newTitle = (siblingNode.length == 1? "child": title) + '-' + (childLength + 1);
 
                 let newNode = {
                     title: newTitle,
@@ -78,24 +94,32 @@
                 }
                 childData.push(newNode)
            },
-           handleDelNode(nodeData, index, parentData) {
-               parentData.splice(index,1)
+           handleDelNode(nodeData, index, siblingNode) {
+               siblingNode.splice(index,1)
            },
-           handleChecked(e) {
-               console.log(e)
+           handleChecked(nodeData, index, siblingNode) {
+                // nodeData.checked = !nodeData.checked
+                console.log(nodeData)
+                this.$emit('test')
+           },
+           setRelationNode(nodeData,checked) {
+
+           },
+           getCheckedNodeParents(nodeData) {
+
            }
        },
        render(h) {
-           let createNode = (nodeData) => {
-                return nodeData.map((current,index,sourceData) => {
+        let createNode = (nodeData) => {
+                return nodeData.map((current,index,siblingData) => {
                     const childData = current.children
                     return (
-                        <li>
+                        <li key={ current.id }>
                             <div class="node-content">
-                                <div class="title"><input type="checkbox" checked={ current.checked } onChange={ this.handleChecked } /> { current.title }</div>                            
+                                <div class="title"><input type="checkbox" value={ current.checked } checked={ current.checked } onChange={ this.handleChecked.bind(this, current, index, siblingData) } /> { current.title }</div>                            
                                 <div class="operate">
-                                    <span class="add-btn" onClick={ ()=>{ this.handleAddNode(current, index, sourceData) } }>+</span>
-                                    <span class="del-btn" onClick={ ()=>{ this.handleDelNode(current, index, sourceData) } }>-</span>
+                                    <span class="add-btn" onClick={ ()=>{ this.handleAddNode(current, index, siblingData) } }>+</span>
+                                    <span class="del-btn" onClick={ ()=>{ this.handleDelNode(current, index, siblingData) } }>-</span>
                                 </div>                            
                             </div>
                             <ul class="tree-child">{ childData.length > 0? createNode(childData):""}</ul>
@@ -103,6 +127,7 @@
                     )
                 })
            }
+
            return (
                 <div class="tree-wrap">
                     <ul class="tree-root">
@@ -110,6 +135,9 @@
                     </ul>
                 </div>
            )
+       },
+       created() {
+           console.log(this.id)
        }
    }
 </script>
