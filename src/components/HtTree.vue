@@ -158,6 +158,7 @@
                 justify-content: space-between;
                 align-items: center;
                 .title{
+                    color: #666;
                 }
                 .operate{
                     .add-btn,

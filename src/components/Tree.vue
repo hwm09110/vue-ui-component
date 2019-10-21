@@ -77,6 +77,72 @@
                             }
                         ]
                     }
+                ],
+                sourceTreeData:[
+                    {
+                        id:1,
+                        pid:null,
+                        title: "root node",
+                        expand: true,
+                        checked: false,
+                        children: []
+                    },
+                    {
+                        id:2,
+                        pid:1,
+                        title: "child-1",
+                        expand: false,
+                        checked: false,
+                        children: []
+                    },
+                    {
+                        id:3,
+                        pid:1,
+                        title: "child-2",
+                        expand: false,
+                        checked: false,
+                        children: []
+                    },
+                    {
+                        id:8,
+                        pid:1,
+                        title: "child-4",
+                        expand: false,
+                        checked: true,
+                        children: []
+                    },
+                    {
+                        id:4,
+                        pid:1,
+                        title: "child-3",
+                        expand: false,
+                        checked: false,
+                        children: []
+                    },
+                    {
+                        id:5,
+                        pid:4,
+                        title: "child-3-1",
+                        expand: false,
+                        checked: false,
+                        children: []
+                    },
+                    {
+                        id:6,
+                        pid:4,
+                        title: "child-3-2",
+                        expand: false,
+                        checked: false,
+                        children: []
+                    },
+                    {
+                        id:7,
+                        pid:4,
+                        title: "child-3-3",
+                        expand: false,
+                        checked: false,
+                        children: []
+                    }
                 ]
             }
         },
@@ -85,16 +151,43 @@
 
             },
             getCheckedNodeParents(nodeData) {
+                let pid = nodeData.pid
+                let parentNodes = [];
+                console.log(this.getParentNodeById(pid))
+            },
+            getParentNodeById(pid){
+                let result = [];
+                this.treeData.forEach((item) => {
+                    if(item.id == pid){
+                        result.push(item)
+                        item.pid && this.getParentNodeById(item.pid)
+                    }
+                })
+                return result
+            },
+            getRootNode(data) {
+                let rootNodes = []
+                data.forEach((item,index) => {
+                    if(!item.pid){
+                        rootNodes.push(item)
+                    }
+                })
+                return rootNodes
+            },
+            convertTreeData(data) {
 
+            },
+            _initTreeData() {
+                
             },
             handleNodeChecked(currentNode, nodeKey, parentNode) {
                 console.log('node-checked', currentNode, nodeKey, parentNode)
+                this.getCheckedNodeParents(currentNode)
             },
             handleNodeDelete(currentNode, nodeKey, parentNode){
                 console.log('node-delete',currentNode, nodeKey, parentNode)
                 if(!currentNode.pid){
-                    this.treeData = []
-                    console.log(currentNode.pid)
+                    this.treeData.splice(nodeKey,1)
                 }else{
                     parentNode.children.splice(nodeKey,1)
                 }
