@@ -11,9 +11,6 @@ export default {
         Calendar
     },
     methods:{
-        handleTest() {
-            console.log('test')
-        },
     },
     mounted() {
       console.log(this.$refs['calendar'])

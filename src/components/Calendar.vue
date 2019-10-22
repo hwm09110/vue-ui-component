@@ -18,7 +18,7 @@
       <div class="day-item prev-month-day" v-for="(dayItem) of prevMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
         <span class="number">{{dayItem.day}}</span>
       </div>
-      <div :class="['day-item', {'curDate': dayItem.curDate} , {'disabled': dayItem.disabled}]"  v-for="(dayItem) of curMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
+      <div :class="['day-item', {'curDate': dayItem.curDate},{'checked': dayItem.checked}, {'disabled': dayItem.disabled}]"  v-for="(dayItem) of curMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
         <span class="number">{{dayItem.day}}</span>
       </div>
       <div class="day-item next-month-day" v-for="(dayItem) of nextMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
@@ -109,10 +109,21 @@ export default {
       this.renderDays(nextYear, nextMonth)
     },
 
-    //点击日期
+    //点击选择日期（单选）
     handleDayClick(dayItem) {
       const { year, month, day } = dayItem
       console.log(`${year}-${month}-${day}`)
+      
+      //当前月份的日期单选
+      if(dayItem.checked !== undefined && !dayItem.disabled){
+        this.curMonthDays.forEach(item => {
+          if(item.day == dayItem.day){
+            item.checked = true
+          }else{
+            item.checked = false
+          }
+        })
+      }
     },
 
     //获取某年某月有几天
@@ -153,6 +164,7 @@ export default {
           month,
           day: item,
           key:`cur${item}`,
+          checked: false,
           curDate: this.curYear == year && this.curMonth == month && item == this.curDate ? true : false,
           disabled: this.curYear == year && this.curMonth == month && this.disabledCurDateNext && item > this.curDate
         }
@@ -237,6 +249,7 @@ export default {
       &.disabled{
         color: #999;
       }
+      &.checked,
       &.curDate{
         .number{
           display: inline-block;
