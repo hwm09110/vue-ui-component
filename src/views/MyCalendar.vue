@@ -1,5 +1,5 @@
 <template>
-    <Calendar></Calendar>
+    <Calendar ref="calendar"></Calendar>
 </template>
 
 
@@ -14,6 +14,9 @@ export default {
         handleTest() {
             console.log('test')
         },
+    },
+    mounted() {
+      console.log(this.$refs['calendar'])
     }
 }
 </script>

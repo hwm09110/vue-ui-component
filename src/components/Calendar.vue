@@ -5,7 +5,7 @@
         <span class="prev-month" @click="handlePrevMonth"><</span>
       </div>
       <div class="middle">
-        <span class="now-month">{{curYear}}年{{curMonth}}月</span>
+        <span class="now-month">{{switchYear}}年{{switchMonth}}月</span>
       </div>
       <div class="right">
         <span class="prev-month" @click="handleNextMonth">></span>
@@ -15,9 +15,15 @@
       <span v-for="(week, index) of weeks" :key="index">{{week}}</span>
     </div>
     <div class="days">
-      <div class="day-item prev-month-day" v-for="(dayItem, index) of prevMonthDays" :key="index">{{dayItem}}</div>
-      <div class="day-item" v-for="(dayItem, index) of curMonthDays" :key="index">{{dayItem}}</div>
-      <div class="day-item next-month-day" v-for="(dayItem, index) of nextMonthDays" :key="index">{{dayItem}}</div>
+      <div class="day-item prev-month-day" v-for="(dayItem) of prevMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
+        <span class="number">{{dayItem.day}}</span>
+      </div>
+      <div :class="['day-item', {'curDate': dayItem.curDate && dayItem.month == curMonth && dayItem.year == curYear }]"  v-for="(dayItem) of curMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
+        <span class="number">{{dayItem.day}}</span>
+      </div>
+      <div class="day-item next-month-day" v-for="(dayItem) of nextMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
+        <span class="number">{{dayItem.day}}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -36,24 +42,61 @@ export default {
       prevMonthDays: [], 
       //当前月份的下一个月日期
       nextMonthDays: [], 
+      switchYear:new Date().getFullYear(), //当前切换到的年
+      switchMonth:(new Date().getMonth() + 1), //当前切换到的月
+
+      // 当前日期
       curYear: new Date().getFullYear(),
       curMonth: (new Date().getMonth() + 1),
+      curDate: new Date().getDate(),
+
+      //带标记日期
+      markDate:[],
     }
   },
   methods: {
 
+    formatNum(num) {
+      return num < 10 ? `0${num}` : num
+    },
+
+    //获取上一个月
+    getPrevYearAndMonth(nowYear, nowMonth) {
+      let prevMonth = nowMonth - 1 > 0 ? (nowMonth - 1) : 12
+      let prevYear = prevMonth == 12 ? (nowYear - 1) : nowYear
+      return {prevYear, prevMonth}
+    },
+
+    //获取下一个月
+    getNextYearAndMonth(nowYear, nowMonth) {
+      let nextMonth = +nowMonth + 1 <= 12 ? (+nowMonth + 1) : 1
+      let nextYear = nextMonth == 1 ? (nowYear + 1) : nowYear
+      return {nextYear, nextMonth}
+    },
+
     //切换上个月
     handlePrevMonth() {
-      let prevMonth = this.curMonth - 1 > 0 ? (this.curMonth - 1) : 12
-      let prevYear = prevMonth == 12 ? (this.curYear - 1) : this.curYear
+      let { prevYear, prevMonth } = this.getPrevYearAndMonth(this.switchYear, this.switchMonth)
 
-      this.curYear = prevYear
-      this.curMonth = prevMonth
+      this.switchYear = prevYear
+      this.switchMonth = this.formatNum(prevMonth)
       this.renderDays(prevYear, prevMonth)
     },
 
     //切换下个月
-    handleNextMonth() {},
+    handleNextMonth() {
+      let { nextYear, nextMonth} = this.getNextYearAndMonth(this.switchYear, this.switchMonth)
+
+      this.switchYear = nextYear
+      this.switchMonth = this.formatNum(nextMonth)
+      this.renderDays(nextYear, nextMonth)
+    },
+
+    //点击日期
+    handleDayClick(dayItem) {
+      const { year, month, day } = dayItem
+      console.log(`${year}-${month}-${day}`)
+    },
 
     //获取某年某月有几天
     getMonthDayCount(year, month) {
@@ -68,11 +111,14 @@ export default {
     // 渲染日期
     renderDays(year,month) {
       let curDateWeek  = this.getWeekOfFistDate(year, month)
-      console.log('当月1号星期几:'+curDateWeek)
+      console.log('当月1号星期几:'+this.weeks[curDateWeek] + ','+curDateWeek)
+
+      let {prevYear, prevMonth} = this.getPrevYearAndMonth(year, month)
+      let {nextYear, nextMonth} = this.getNextYearAndMonth(year, month)
 
       let curMonthLen = this.getMonthDayCount(year, month)
-      let prevMonthLen = this.getMonthDayCount(year, month -1)
-      let nextMonthLen = this.getMonthDayCount(year, month + 1)
+      let prevMonthLen = this.getMonthDayCount(prevYear, prevMonth)
+      let nextMonthLen = this.getMonthDayCount(nextYear, nextMonth)
       console.log('当前月有几天：'+curMonthLen)
       console.log('上个月有几天：'+prevMonthLen)
       console.log('下个月有几天：'+nextMonthLen)
@@ -84,9 +130,36 @@ export default {
       console.log('上个月日期：'+prevMonthNumber)
       console.log('下个月日期：'+nextMonthNumber)
 
-      this.curMonthDays = curMonthNumber
-      this.prevMonthDays = prevMonthNumber.slice(-curDateWeek)
-      this.nextMonthDays = nextMonthNumber.slice(0, this.daysCount - curMonthLen - curDateWeek)
+      this.curMonthDays = curMonthNumber.map(item=>{
+        return {
+          year,
+          month,
+          day: item,
+          key:`cur${item}`,
+          curDate: item == this.curDate ? true : false
+        }
+      })
+      
+      this.prevMonthDays = curDateWeek > 0 ? prevMonthNumber.slice(-curDateWeek).map(item=>{
+        return {
+          year: prevYear,
+          month: prevMonth,
+          day: item,
+          key:`prev${item}`
+        }
+      }) : []
+
+      this.nextMonthDays = nextMonthNumber.slice(0, this.daysCount - curMonthLen - curDateWeek).map(item=>{
+        return {
+          year: nextYear,
+          month: nextMonth,
+          day: item,
+          key:`next${item}`
+        }
+      })
+      console.log('渲染prev:',this.prevMonthDays)
+      console.log('渲染cur:',this.curMonthDays)
+      console.log('渲染next:',this.nextMonthDays)
     },
 
     
@@ -140,6 +213,23 @@ export default {
       width: calc(100%/7);
       height: 35px;
       line-height: 35px;
+      color: #000;
+      &.prev-month-day,
+      &.next-month-day{
+        color: #999;
+      }
+      &.curDate{
+        .number{
+          display: inline-block;
+          color: #fff;
+          background-color: #47AEFE;
+          font-weight: 500;
+          width: 30px;
+          height: 30px;
+          line-height: 30px;
+          border-radius: 100%;
+        }
+      }
     }
   }
 }
