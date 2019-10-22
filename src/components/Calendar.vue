@@ -8,7 +8,7 @@
         <span class="now-month">{{switchYear}}年{{switchMonth}}月</span>
       </div>
       <div class="right">
-        <span class="prev-month" @click="handleNextMonth">></span>
+        <span class="prev-month" @click="handleNextMonth" v-show="canUseFutureMonth">></span>
       </div>
     </div>
     <div class="weeks">
@@ -18,7 +18,7 @@
       <div class="day-item prev-month-day" v-for="(dayItem) of prevMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
         <span class="number">{{dayItem.day}}</span>
       </div>
-      <div :class="['day-item', {'curDate': dayItem.curDate && dayItem.month == curMonth && dayItem.year == curYear }]"  v-for="(dayItem) of curMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
+      <div :class="['day-item', {'curDate': dayItem.curDate} , {'disabled': dayItem.disabled}]"  v-for="(dayItem) of curMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
         <span class="number">{{dayItem.day}}</span>
       </div>
       <div class="day-item next-month-day" v-for="(dayItem) of nextMonthDays" :key="dayItem.key" @click="handleDayClick(dayItem)">
@@ -52,6 +52,23 @@ export default {
 
       //带标记日期
       markDate:[],
+
+      //是否可以操作当前月份的下个月
+      canUseFutureMonth: false,
+
+      //当天之后日期禁用
+      disabledCurDateNext: true,
+
+    }
+  },
+  watch: {
+    switchYear(newVal) {
+      this.canUseFutureMonth = this.curYear >= newVal 
+    },
+    switchMonth(newVal) {
+      if(this.switchYear == this.curYear){
+        this.canUseFutureMonth = this.curMonth > newVal
+      }
     }
   },
   methods: {
@@ -136,7 +153,8 @@ export default {
           month,
           day: item,
           key:`cur${item}`,
-          curDate: item == this.curDate ? true : false
+          curDate: this.curYear == year && this.curMonth == month && item == this.curDate ? true : false,
+          disabled: this.curYear == year && this.curMonth == month && this.disabledCurDateNext && item > this.curDate
         }
       })
       
@@ -215,7 +233,8 @@ export default {
       line-height: 35px;
       color: #000;
       &.prev-month-day,
-      &.next-month-day{
+      &.next-month-day,
+      &.disabled{
         color: #999;
       }
       &.curDate{
