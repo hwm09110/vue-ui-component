@@ -192,8 +192,6 @@ export default {
       console.log('渲染next:',this.nextMonthDays)
     },
 
-    
-
     init() {
       this.renderDays(this.curYear, this.curMonth)
     }
