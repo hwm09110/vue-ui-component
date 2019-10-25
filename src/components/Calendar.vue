@@ -209,10 +209,11 @@ export default {
   text-align: center;
   .header{
     display: flex;
-    height: 35px;
+    height: 45px;
     align-items: center;
     justify-content: space-between;
     font-weight: bold;
+    border-bottom: 1px solid #DDDDDD;
     .left{
       width: 15%;
     }
