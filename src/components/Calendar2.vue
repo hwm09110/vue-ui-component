@@ -56,7 +56,7 @@ export default {
       usableDates:[],
 
       //是否可以操作当前月份的下个月
-      canUseFutureMonth: false,
+      canUseFutureMonth: true,
 
       //当天之后日期禁用
       disabledCurDateNext: true,
@@ -68,11 +68,11 @@ export default {
   },
   watch: {
     switchYear(newVal) {
-      this.canUseFutureMonth = this.curYear >= newVal 
+      // this.canUseFutureMonth = this.curYear >= newVal 
     },
     switchMonth(newVal) {
       if(this.switchYear == this.curYear){
-        this.canUseFutureMonth = this.curMonth > newVal
+        // this.canUseFutureMonth = this.curMonth > newVal
       }
     },
   },
@@ -265,6 +265,17 @@ export default {
       console.log('下个月日期：'+nextMonthNumber)
 
       this.curMonthDays = curMonthNumber.map(item=>{
+        let isDisabled = false
+        if(this.disabledCurDateNext) {
+          if(this.curYear == year && this.curMonth == month && item > this.curDate){
+            isDisabled = true
+          }else if(this.curYear == year && this.curMonth < month){
+            isDisabled = true
+          }else if(this.curYear < year ){
+            isDisabled = true
+          }
+        }
+
         return {
           year,
           month,
@@ -273,7 +284,7 @@ export default {
           checked: false,
           useable: false, //推荐可选日期
           curDate: this.curYear == year && this.curMonth == month && item == this.curDate ? true : false,
-          disabled: this.curYear == year && this.curMonth == month && this.disabledCurDateNext && item > this.curDate
+          disabled: isDisabled
         }
       })
       

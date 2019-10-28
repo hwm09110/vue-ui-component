@@ -159,6 +159,16 @@ export default {
       console.log('下个月日期：'+nextMonthNumber)
 
       this.curMonthDays = curMonthNumber.map(item=>{
+        let isDisabled = false
+        if(this.disabledCurDateNext) {
+          if(this.curYear == year && this.curMonth == month && item > this.curDate){
+            isDisabled = true
+          }else if(this.curYear == year && this.curMonth < month){
+            isDisabled = true
+          }else if(this.curYear < year ){
+            isDisabled = true
+          }
+        }
         return {
           year,
           month,
@@ -166,7 +176,7 @@ export default {
           key:`cur${item}`,
           checked: false,
           curDate: this.curYear == year && this.curMonth == month && item == this.curDate ? true : false,
-          disabled: this.curYear == year && this.curMonth == month && this.disabledCurDateNext && item > this.curDate
+          disabled: isDisabled
         }
       })
       
