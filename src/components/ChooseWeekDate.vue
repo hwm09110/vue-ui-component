@@ -1,7 +1,7 @@
 <template>
   <div class="choose-wrap">
     <div class="side-wrap">
-      <div class="year">2019年</div>
+      <div class="year">{{curYear}}年</div>
       <ul class="months" ref="monthList">
         <li :class="[{'active':item.active}]" v-for="(item, index) of months" :key="index" @click="handleChooseMonth(item)">{{item.month}}月</li>
       </ul>
@@ -16,20 +16,36 @@
 
 
 <script>
+import { debounce, throttle } from '@/utils'
 export default {
   name: "ChooseWeekDate",
   data() {
     return {
+      curYear: 0,
       months: [
-        {year:2019, month:4, active:false},
+        // {year:2019, month:4, active:false},
       ],
       weekDateList: [
-        {name: "12月02日~12月08日", selected: false,},
+        // {name: "12月02日~12月08日", selected: false,},
       ],
       limitMonthCount: 6, //展示最近6个月份的
-      defaultSelectedWeekCount: 7, //默认选中最近7个周
-      monthListElem: null,
-      dateListElem: null,
+      defaultSelectedWeekCount: 4, //默认选中最近4个周
+      monthListElem: null, //月份列表ul DOM 
+      dateListElem: null, //周日期列表ul DOM
+      monthToListPosInfo: {}, //每个月对应列表的起始位置信息
+      weekDateItemPosInfo: [], //每个周日期选项的 offsetTop
+    }
+  },
+  watch: {
+    months:{
+      deep: true,
+      handler:function(newVal, oldVal){
+        newVal.forEach(item => {
+          if(item.active){
+            this.curYear = item.year
+          }
+        })
+      }
     }
   },
   methods: {
@@ -64,6 +80,7 @@ export default {
         item.active = false
       })
       itemMonth.active = true
+      this.scrollWeekList(itemMonth.month)
     },
 
     //点击选中日期
@@ -77,8 +94,8 @@ export default {
       return new Date(dateStr).getDay()
     },
 
-    // 获取最近7个月份
-    generateLastSevenMonth() {
+    // 获取最近6个月份
+    generateLastSixMonth() {
       let nowYear = new Date().getFullYear()
       let nowMonth = new Date().getMonth() + 1
       let len = this.limitMonthCount
@@ -88,21 +105,32 @@ export default {
         len--
         let year = nowYear
         let month = 0
-        if(nowMonth - len <= 0){
-          year = nowYear - 1
-          month = 12 + (nowMonth - len)
+        let diffMonthCount = nowMonth - len
+
+        if(diffMonthCount <= 0){
+          if(diffMonthCount <= -12){
+            year = nowYear - (Math.abs(Math.ceil(-diffMonthCount / 12 )))
+            month = 12 - (Math.abs(diffMonthCount)%12)
+            //当月份为12时，年减1
+            if(Math.abs(diffMonthCount)%12 == 0){
+              year--
+            }
+          }else{
+            year = nowYear - 1
+            month = 12 + diffMonthCount
+          }
         }else{
-          month = nowMonth - len
+          month = diffMonthCount
         }
         monthArr.push({year, month})
       }
-      console.log(monthArr)
+      console.log('monthArr', monthArr)
       return monthArr
     },
 
     //生成最近7个月份
     renderMonths() {
-      let sourceMonthData = this.generateLastSevenMonth()
+      let sourceMonthData = this.generateLastSixMonth()
       let nowMonth = new Date().getMonth() + 1
       this.months = sourceMonthData.map(item => {
         item.active = nowMonth == item.month ? true : false
@@ -177,18 +205,19 @@ export default {
       console.log('共周数：'+ weekCount)
       let weekDateArr = []
       let startDate = startWeekDate //开始日期
-      for(let i = 1; i<=weekCount; i++){
+      for(let i = 1; i <= weekCount; i++){
         let endTimeStamps = new Date(startDate).getTime() + 6*24*60*60*1000
         let shortstart = this.formatTimeStamp(startDate, 'MM月dd日')
         let shortend = this.formatTimeStamp(endTimeStamps, 'MM月dd日')
         let fullstart = this.formatTimeStamp(startDate, 'yyyy-MM-dd')
         let fullend = this.formatTimeStamp(endTimeStamps, 'yyyy-MM-dd')
         let startyear = this.formatTimeStamp(startDate, 'yyyy')
-        let startMonth = this.formatTimeStamp(startDate, 'MM')
+        let startMonth = this.formatTimeStamp(startDate, 'M')
         let endyear = this.formatTimeStamp(endTimeStamps, 'yyyy')
-        let endMonth = this.formatTimeStamp(endTimeStamps, 'MM')
+        let endMonth = this.formatTimeStamp(endTimeStamps, 'M')
         let weekDateItem = {
           name: shortstart + '~' + shortend,
+          belongMonth: i == 1 ? endMonth : startMonth,
           shortstart,
           shortend,
           fullstart,
@@ -206,16 +235,66 @@ export default {
       return weekDateArr
     },
 
+    //周日期列表滚动到指定月份位置
+    scrollWeekList(month){
+      const topVal = this.monthToListPosInfo[month] && this.monthToListPosInfo[month]['startPos'] || 0
+      this.dateListElem.scrollTop = topVal
+    },
+
+    //设置某月份处于 active 状态
+    setMonthActive(month) {
+      this.months.forEach(item => {
+        item.active = item.month == month ? true : false
+      })
+    },
+
     init() {
       this.renderMonths()
       this.renderWeekDate()
       this.$nextTick(()=>{
+        // 取 li margin-bottom
+        const liElemLists = this.dateListElem.querySelectorAll('li')
+        const firstLiElem = liElemLists[0]
+        let liMarginBottom = window.getComputedStyle(firstLiElem,null)['margin-bottom']
+        liMarginBottom = parseInt(liMarginBottom,10)
+        
+        this.weekDateItemPosInfo = this.weekDateList.map((weekDateItem, index) => {
+          const itemOffsetTop = liElemLists[index].offsetTop
+          const itemOffsetHeight = liElemLists[index].offsetHeight
+          return {
+            month: weekDateItem.belongMonth,
+            offsetTop: itemOffsetTop,
+            offsetHeight: itemOffsetHeight,
+          }
+        })
+
+        this.weekDateItemPosInfo.forEach(itemPos => {
+          if(!this.monthToListPosInfo[itemPos.month]) {
+            this.monthToListPosInfo[itemPos.month] = {}
+            this.monthToListPosInfo[itemPos.month]['startPos'] = itemPos['offsetTop']
+            this.monthToListPosInfo[itemPos.month]['endPos'] = itemPos['offsetTop'] + itemPos['offsetHeight'] + liMarginBottom
+          }else{
+            this.monthToListPosInfo[itemPos.month]['endPos'] += itemPos['offsetHeight'] + liMarginBottom // 为 margin-bottom值
+          }
+        })
+
         console.log('monthListElem height',this.monthListElem.offsetHeight)
         console.log('dateListElem height',this.dateListElem.offsetHeight)
+        console.log(this.weekDateItemPosInfo)
+        console.log(this.monthToListPosInfo)
+
         this.dateListElem.scrollTop = 20000
-        this.dateListElem.addEventListener('scroll', function(ev){
-          console.log(this.scrollTop)
-        })
+        let vm = this
+        const scrollHandler = function(ev) {
+          const scrollTopVal = ev.target.scrollTop
+          Object.keys(vm.monthToListPosInfo).forEach(key => {
+            if(scrollTopVal >= vm.monthToListPosInfo[key]['startPos'] && scrollTopVal < vm.monthToListPosInfo[key]['endPos']) {
+              // console.log('active month', key)
+              vm.setMonthActive(key)
+            }
+          })
+        }
+        this.dateListElem.addEventListener('scroll', debounce(scrollHandler, 50))
       })
     }
   },
@@ -268,6 +347,7 @@ export default {
     height: 100%;
     padding:20px 30px 0;
     .date-list{
+      position: relative; /*容器设置相对定位，子元素获取offsetTop才相对它的父元素*/
       height: 100%;
       overflow-y: auto;
       >li{
