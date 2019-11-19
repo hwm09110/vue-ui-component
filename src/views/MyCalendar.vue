@@ -1,6 +1,6 @@
 <template>
     <div style="padding-top:50px; ">
-        <!-- <Calendar2 ref="calendar"></Calendar2> -->
+        <Calendar2 ref="calendar"></Calendar2>
         <ChooseWeekDate style="border-top:1px solid #dcdcdc;"/>
         <ChooseMonth style="border-top:1px solid #dcdcdc; margin-top:20px;"/>
     </div>
