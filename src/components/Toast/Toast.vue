@@ -8,12 +8,16 @@
 
 <script>
 export default {
-  data() {
-    return {
-      message: "这是提示信息",
-      show: false
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    message: {
+      type: String,
+      default: ""
     }
-  }
+  },
 }
 </script>
 

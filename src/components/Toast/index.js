@@ -7,17 +7,15 @@ const HtToast = {
 
     function msg(msgContent) {
       const ToastConstructor = Vue.extend(Toast)
-      let toast = new ToastConstructor({
-        data() {
-          return {
-            message: msgContent
-          }
-        }
-      })
+      let toast = new ToastConstructor()
       let vm = toast.$mount()
       let el = vm.$el
       document.body.appendChild(el) //把生成的提示的dom插入body中
-  
+      
+      console.log('toast', toast)
+      console.log('vm', vm)
+
+      toast.message = msgContent
       vm.show = true
       let timer1 = setTimeout(() => {
         vm.show = false
